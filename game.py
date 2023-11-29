@@ -1,3 +1,9 @@
+import csv
+import os
+from datetime import datetime
+
+from player import BotPlayer
+
 class TicTacToeGame:
     def __init__(self, player1, player2):
         self.board = [
@@ -7,6 +13,7 @@ class TicTacToeGame:
     ]
         self.players = [player1, player2]
         self.current_player = 0
+        self.move_count = {'X': 0, 'O': 0}  # Track moves for each player
 
     def print_board(self):
         for row in self.board:
@@ -44,7 +51,7 @@ class TicTacToeGame:
             
         return None
 
-    
+
 
     def play_game(self):
         winner = None
@@ -52,16 +59,32 @@ class TicTacToeGame:
         while winner is None:
             self.print_board()
             row, col = self.players[self.current_player].make_move(self.board)
-
             self.board[row][col] = self.players[self.current_player].symbol
+            self.move_count[self.players[self.current_player].symbol] += 1
             winner = self.get_winner()
 
-            if winner is None and all(all(cell is not None for cell in row) for row in self.board):
+            if winner == 'Draw' and all(all(cell is not None for cell in row) for row in self.board):
                 print("It's a draw!")
+                self.log_game_result('Draw')
                 self.print_board()
                 return
 
             self.current_player = 1 - self.current_player
 
         print(f'Player {winner} wins!')
+        self.log_game_result(winner)
         self.print_board()
+
+    def log_game_result(self, winner):
+        log_folder = 'log'
+        log_file = os.path.join(log_folder, 'game_logs.csv')
+        log_exists = os.path.exists(log_file)
+        player_o_type = 'Bot' if isinstance(self.players[1], BotPlayer) else 'Human'
+        if not log_exists:
+            print('Creating new log file')
+            with open(log_file, 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Timestamp', 'Winner', 'Player X Moves', 'Player O Moves', 'Player O Type'])
+        with open(log_file, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([datetime.now(), winner, self.move_count['X'], self.move_count['O'], player_o_type])
