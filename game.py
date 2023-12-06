@@ -14,6 +14,7 @@ class TicTacToeGame:
         self.players = [player1, player2]
         self.current_player = 0
         self.move_count = {'X': 0, 'O': 0}  # Track moves for each player
+        self.first_move = None  # To track the first move
 
     def print_board(self):
         for row in self.board:
@@ -55,10 +56,16 @@ class TicTacToeGame:
 
     def play_game(self):
         winner = None
+        first_move_made = False
 
         while winner is None:
             self.print_board()
             row, col = self.players[self.current_player].make_move(self.board)
+
+            if not first_move_made:
+                self.first_move = (row, col)
+                first_move_made = True
+
             self.board[row][col] = self.players[self.current_player].symbol
             self.move_count[self.players[self.current_player].symbol] += 1
             winner = self.get_winner()
@@ -80,11 +87,13 @@ class TicTacToeGame:
         log_file = os.path.join(log_folder, 'game_logs.csv')
         log_exists = os.path.exists(log_file)
         player_o_type = 'Bot' if isinstance(self.players[1], BotPlayer) else 'Human'
+        first_move_square = 'corner' if self.first_move in [(0, 0), (0, 2), (2, 0), (2, 2)] else \
+                            'center' if self.first_move == (1, 1) else 'edge'        
         if not log_exists:
             print('Creating new log file')
             with open(log_file, 'w', newline='') as file:
                 writer = csv.writer(file)
-                writer.writerow(['Timestamp', 'Winner', 'Player X Moves', 'Player O Moves', 'Player O Type'])
+                writer.writerow(['Timestamp', 'Winner','First Move Square', 'Player X Moves', 'Player O Moves', 'Player O Type'])
         with open(log_file, 'a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([datetime.now(), winner, self.move_count['X'], self.move_count['O'], player_o_type])
+            writer.writerow([datetime.now(), winner, first_move_square, self.move_count['X'], self.move_count['O'], player_o_type])
